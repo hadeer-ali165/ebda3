@@ -1,0 +1,31 @@
+# Deploy on https://render.com — connect this GitHub repo, then set env vars from Supabase.
+services:
+  - type: web
+    name: ebda3
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        value: postgres
+      - key: DB_USERNAME
+        value: postgres
+      - key: DB_PASSWORD
+        sync: false
+      - key: APP_URL
+        sync: false
