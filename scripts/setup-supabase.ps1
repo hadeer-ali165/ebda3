@@ -10,8 +10,21 @@ param(
 
     [string]$DbDatabase = "postgres",
     [string]$DbUsername = "postgres",
+    [string]$ProjectRef = "",
     [int]$DbPort = 5432
 )
+
+# If host is db.*.supabase.co on Windows, use pooler instead (IPv6 issue).
+if ($DbHost -match '^db\.([a-z0-9]+)\.supabase\.co$' -and -not $ProjectRef) {
+    $ProjectRef = $Matches[1]
+}
+if ($ProjectRef -and $DbUsername -eq "postgres") {
+    $DbUsername = "postgres.$ProjectRef"
+}
+if ($ProjectRef -and $DbHost -match '^db\.') {
+    $DbHost = "aws-0-eu-west-1.pooler.supabase.com"
+    Write-Host "Using Supabase pooler host for Windows: $DbHost" -ForegroundColor Yellow
+}
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -40,6 +53,7 @@ Set-EnvLine "DB_PORT" $DbPort
 Set-EnvLine "DB_DATABASE" $DbDatabase
 Set-EnvLine "DB_USERNAME" $DbUsername
 Set-EnvLine "DB_PASSWORD" $DbPassword
+Set-EnvLine "DB_SSLMODE" "require"
 
 Write-Host "Installing PHP dependencies..." -ForegroundColor Cyan
 if (-not (Test-Path ".\vendor")) {
