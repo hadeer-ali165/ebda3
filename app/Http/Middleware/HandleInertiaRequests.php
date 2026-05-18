@@ -31,6 +31,14 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $logoPath = AppSetting::query()->where('key', 'branding_logo_path')->value('value');
+        $logoUrl = null;
+
+        if ($logoPath) {
+            $fullPath = storage_path('app/public/'.$logoPath);
+            $version = file_exists($fullPath) ? (string) filemtime($fullPath) : (string) time();
+            $logoUrl = asset('storage/'.$logoPath).'?v='.$version;
+        }
+
         $user = $request->user();
         if ($user) {
             $user->loadMissing('track');
@@ -52,7 +60,7 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'branding' => [
-                'logo_url' => $logoPath ? asset('storage/'.$logoPath) : null,
+                'logo_url' => $logoUrl,
                 'can_manage' => $isAdmin,
             ],
             'permissions' => [

@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function Dashboard({
@@ -35,7 +35,10 @@ export default function Dashboard({
         brandingForm.post(route('settings.branding.update'), {
             preserveScroll: true,
             forceFormData: true,
-            onSuccess: () => brandingForm.reset('logo'),
+            onSuccess: () => {
+                brandingForm.reset('logo');
+                router.reload();
+            },
         });
     };
 

@@ -41,6 +41,10 @@ if exist "%PID_FILE%" (
 
 if not exist "%APP_DIR%storage\logs" mkdir "%APP_DIR%storage\logs"
 
+if not exist "%APP_PUBLIC%\storage" (
+    "%PHP_EXE%" artisan storage:link >nul 2>&1
+)
+
 findstr /I /C:"supabase" "%APP_DIR%.env" >nul
 if errorlevel 1 (
     call "%APP_DIR%runtime\StartPostgres.bat"
