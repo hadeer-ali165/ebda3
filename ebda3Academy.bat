@@ -20,6 +20,13 @@ if not exist "%PHP_EXE%" (
     exit /b 1
 )
 
+if not exist "%APP_DIR%.env" (
+    echo [ERROR] .env file not found.
+    echo Copy .env.example to .env and configure database settings.
+    pause
+    exit /b 1
+)
+
 if exist "%PID_FILE%" (
     set /p OLD_PID=<"%PID_FILE%"
     if not "%OLD_PID%"=="" (
@@ -34,14 +41,25 @@ if exist "%PID_FILE%" (
 
 if not exist "%APP_DIR%storage\logs" mkdir "%APP_DIR%storage\logs"
 
-if not exist "%APP_DIR%database\database.sqlite" (
-    type nul > "%APP_DIR%database\database.sqlite"
+findstr /I /C:"supabase" "%APP_DIR%.env" >nul
+if errorlevel 1 (
+    call "%APP_DIR%runtime\StartPostgres.bat"
+    if errorlevel 1 (
+        echo [ERROR] PostgreSQL failed to start.
+        pause
+        exit /b 1
+    )
+) else (
+    echo Using Supabase database - internet connection required.
 )
 
 echo Preparing database (first run only may take a moment)...
 "%PHP_EXE%" artisan migrate --force
 if errorlevel 1 (
+    echo.
     echo [ERROR] Database migration failed.
+    echo Check .env database settings and your internet connection.
+    echo See storage\logs\laravel.log for details.
     pause
     exit /b 1
 )
@@ -49,10 +67,9 @@ if errorlevel 1 (
 "%PHP_EXE%" artisan db:seed --class=AdminUserSeeder --force >nul 2>&1
 
 echo Starting app server...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$p = Start-Process -FilePath '%PHP_EXE%' -ArgumentList '-S','%APP_HOST%:%APP_PORT%','-t','%APP_PUBLIC%','%APP_ROUTER%' -WorkingDirectory '%APP_DIR%' -WindowStyle Hidden -PassThru; Set-Content -Path '%PID_FILE%' -Value $p.Id -Encoding ascii -NoNewline"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath '%PHP_EXE%' -ArgumentList '-S','%APP_HOST%:%APP_PORT%','-t','%APP_PUBLIC%','%APP_ROUTER%' -WorkingDirectory '%APP_DIR%' -WindowStyle Hidden -PassThru; Set-Content -Path '%PID_FILE%' -Value $p.Id -Encoding ascii -NoNewline"
 
-timeout /t 2 /nobreak >nul
+ping -n 3 127.0.0.1 >nul
 start "" "%APP_URL%"
 echo App started successfully at %APP_URL%
 exit /b 0
